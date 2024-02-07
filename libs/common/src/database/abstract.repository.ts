@@ -1,5 +1,7 @@
-import { Model, Types } from "mongoose";
+import { FilterQuery, Model, Types } from "mongoose";
 import { AbstractDocument } from "./abstract.schema";
+import { filter } from "rxjs";
+import { MaxFileSizeValidator, NotFoundException } from "@nestjs/common";
 
 
 export abstract class AbstractRepository<TDocument extends AbstractDocument>{
@@ -15,5 +17,16 @@ export abstract class AbstractRepository<TDocument extends AbstractDocument>{
         })
 
         return (await createdDocument.save()).toJSON() as unknown as TDocument
+    }
+
+    async findOne(filterQuery:FilterQuery<TDocument>):Promise<TDocument>{
+        const document = await this.model.findOne(filterQuery).lean<TDocument>(true)
+
+        if(!document){
+            this.logger.warn('no document found with the filter query',MaxFileSizeValidator)
+            throw new NotFoundException('document was not found')
+        }
+
+        return document
     }
 }
